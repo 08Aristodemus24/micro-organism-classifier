@@ -58,7 +58,7 @@ def compile_model(raw_model, data, learning_rate):
     # define loss, optimizer, and metrics then compile
     opt = Adam(learning_rate=learning_rate, beta_1=0.9, beta_2=0.999)
     loss = cce_loss(from_logits=True)
-    metrics = [CategoricalAccuracy(), cce_metric(from_logits=True)]    
+    metrics = [CategoricalAccuracy(), cce_metric(from_logits=True)]
     raw_model.compile(optimizer=opt, loss=loss, metrics=metrics)
     raw_model(data)
     raw_model.summary()
