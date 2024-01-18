@@ -14,28 +14,38 @@ from tensorflow.keras.regularizers import L2
 from tensorflow.keras.losses import CategoricalCrossentropy as cce_loss
 from tensorflow.keras.metrics import CategoricalCrossentropy as cce_metric, CategoricalAccuracy
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
+from tensorflow.keras.applications.inception_v3 import InceptionV3
 
 import keras_tuner as kt
 
 import numpy as np
 
 
-def load_baseline_a(n_classes):
+def load_baseline_a(n_classes, input_shape):
     # define architecture
     model = Sequential([
         # build conv and poollayers
-        Conv2D(filters=8,
+        Conv2D(filters=32,
             kernel_size=(5, 5),
             strides=(1, 1),
-            kernel_regularizer=L2(0.8)),
+            kernel_regularizer=L2(0.9),
+            input_shape=input_shape),
         Activation(activation=tf.nn.relu),
         MaxPooling2D(pool_size=(2, 2),
             strides=(2, 2),
             padding='same'),
-        Conv2D(filters=16,
+        Conv2D(filters=64,
             kernel_size=(5, 5),
             strides=(1, 1),
-            kernel_regularizer=L2(0.8)),
+            kernel_regularizer=L2(0.9)),
+        Activation(activation=tf.nn.relu),
+        MaxPooling2D(pool_size=(2, 2),
+            strides=(1, 1),
+            padding='same'),
+        Conv2D(filters=64,
+            kernel_size=(5, 5),
+            strides=(1, 1),
+            kernel_regularizer=L2(0.9)),
         Activation(activation=tf.nn.relu),
         MaxPooling2D(pool_size=(2, 2),
             strides=(1, 1),
@@ -48,24 +58,58 @@ def load_baseline_a(n_classes):
         Dense(units=32),
         BatchNormalization(),
         Activation(activation=tf.nn.relu),
+        Dropout(rate=0.3),
         Dense(units=n_classes),
 
     ], name='architecture-A')
 
     return model
 
-def compile_model(raw_model, data, learning_rate):
+def load_baseline_b(n_classes, input_shape):
+    # instantiate pre trained model
+    pretrained_model = InceptionV3(
+        input_shape=input_shape,
+        include_top=False,
+    )
+
+    # set all InceptionV3s layers trainable
+    # parameters to false
+    pretrained_model.trainable = False
+
+    # define architecture
+    model = Sequential([
+        # build conv and poollayers
+        pretrained_model,
+
+        # flatten pooled layers
+        Flatten(),
+
+        # build fully connected layers
+        Dense(units=512),
+        BatchNormalization(),
+        Activation(activation=tf.nn.relu),
+        Dropout(rate=0.2),
+        Dense(units=256),
+        BatchNormalization(),
+        Activation(activation=tf.nn.relu),
+        Dropout(rate=0.2),
+        Dense(units=n_classes),
+
+    ], name='architecture-inception-v3')
+
+    return model
+
+def compile_model(raw_model, learning_rate):
     # define loss, optimizer, and metrics then compile
     opt = Adam(learning_rate=learning_rate, beta_1=0.9, beta_2=0.999)
     loss = cce_loss(from_logits=True)
     metrics = [CategoricalAccuracy(), cce_metric(from_logits=True)]
     raw_model.compile(optimizer=opt, loss=loss, metrics=metrics)
-    raw_model(data)
     raw_model.summary()
 
     return raw_model
 
-def train_model(compiled_model, training_data, validation_data, epochs, batch_size):
+def train_model(compiled_model, training_data, validation_data, epochs):
     # define checkpoint and early stopping callback to save
     # best weights at each epoch and to stop if there is no improvement
     # of validation loss for 10 consecutive epochs
@@ -85,12 +129,11 @@ def train_model(compiled_model, training_data, validation_data, epochs, batch_si
     # begin training test model
     history = compiled_model.fit(training_data,
         epochs=epochs,
-        batch_size=batch_size, 
         callbacks=callbacks,
         validation_data=validation_data,
         verbose=2,)
     
-    return history
+    return history, compiled_model
 
 class MOClassifierHyperModel(kt.HyperModel):
     def __init__(self, n_classes, name=None, tunable=True):
@@ -123,6 +166,9 @@ class MOClassifierHyperModel(kt.HyperModel):
         model = Sequential(name='architecture-A')
 
         # build conv and poollayers
+        model.add(Conv2D(filters=hp_filter, kernel_size=hp_kernel_size, strides=(1, 1), kernel_regularizer=L2(hp_lambda)))
+        model.add(Activation(activation=tf.nn.relu))
+        model.add(MaxPooling2D(pool_size=hp_pool_size, strides=hp_pool_strides, padding=hp_padding))
         model.add(Conv2D(filters=hp_filter, kernel_size=hp_kernel_size, strides=(1, 1), kernel_regularizer=L2(hp_lambda)))
         model.add(Activation(activation=tf.nn.relu))
         model.add(MaxPooling2D(pool_size=hp_pool_size, strides=hp_pool_strides, padding=hp_padding))
@@ -195,7 +241,7 @@ def train_tuner(tuner, training_data, validation_data, epochs=10, batch_size=128
 
     best_params = tuner.get_best_hyperparameters()[0]
 
-    return best_params
+    return best_params, tuner
 
     
     

@@ -133,7 +133,6 @@ def encode_image(image_path: str, dimensions: tuple=(256, 256)):
 
     return encoded_img
 
-
 def standardize_image(encoded_img):
     """
     rescales an encoded image's values from 0 to 255 down
@@ -147,3 +146,44 @@ def standardize_image(encoded_img):
     rescaled_img = (encoded_img * 1.0) / 255
 
     return rescaled_img
+
+def rejoin_batches(data_generator):
+    """
+    rejoins the generator batches created by a data generator
+    like ImageDataGenerator and returns a numpy array
+    """
+    X = []
+    Y = []
+    batch_index = 0
+    total_examples = 0
+
+    while batch_index <= data_generator.batch_index:
+        data = next(data_generator)
+        images, labels = data
+        total_examples += len(images)
+        
+        # loop through all examples in each batch
+        for i in range(len(images)):
+            image = images[i]
+            label = labels[i]
+            X.append(image)
+            Y.append(label)
+
+        batch_index = batch_index + 1
+    print(total_examples)
+
+    X_array = np.asarray(X)
+    Y_array = np.asarray(Y)
+
+    return X_array, Y_array
+
+def activate_logits(logits):
+    """
+    passes the predicted logits to a softmax layer to
+    obtain a probability vector that sums to 1
+    """
+
+    softmax_layer = tf.keras.layers.Activation(activation=tf.nn.softmax)
+    Y_preds = softmax_layer(logits)
+
+    return Y_preds

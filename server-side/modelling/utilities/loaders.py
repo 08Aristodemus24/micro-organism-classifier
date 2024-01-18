@@ -83,22 +83,26 @@ def create_image_set(root_dir: str, img_dims: tuple=(256, 256)):
 
     return train_gen, cross_gen, test_gen
 
-def create_metrics_df(train_metric_values, val_metric_values, test_metric_values):
+def create_metrics_df(train_metric_values, 
+    val_metric_values, 
+    test_metric_values, 
+    metrics=['accuracy', 'precision', 'recall', 'f1-score']):
     """
     creates a metrics dataframe
     """
 
-    train_acc, train_prec, train_rec, train_f1 = train_metric_values
-    val_acc, val_prec, val_rec, val_f1 = val_metric_values
-    test_acc, test_prec, test_rec, test_f1 = test_metric_values
+    metrics_dict = {
+        'data_split': ['training', 'validation', 'testing']
+    }
 
-    metrics_df = pd.DataFrame({
-        'data_split': ['training', 'validation', 'testing'],
-        'accuracy': [train_acc, val_acc, test_acc], 
-        'precision': [train_prec, val_prec, test_prec], 
-        'recall': [train_rec, val_rec, test_rec], 
-        'f1-score': [train_f1, val_f1, test_f1]
-    })
+    for index, metric in enumerate(metrics):
+        metrics_dict[metric] = [
+            train_metric_values[index], 
+            val_metric_values[index],
+            test_metric_values[index]
+        ]
+
+    metrics_df = pd.DataFrame(metrics_dict)
 
     return metrics_df
 
