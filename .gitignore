@@ -2,6 +2,7 @@
 /server-side/modelling/final/
 /server-side/modelling/data/
 /.env
+/*.mp4
 
 # Logs
 /client-side/logs

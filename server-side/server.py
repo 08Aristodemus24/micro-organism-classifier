@@ -73,4 +73,4 @@ def predict():
     final_preds = re_encode_sparse_labels(Y_preds, new_labels=['Amoeba', 'Euglena', 'Hydra', 'Paramecium', 'Rod_bacteria', 'Spherical_bacteria', 'Spiral_bacteria', 'Yeast'])
     print(final_preds)
     
-    return jsonify({'prediction': final_preds})
+    return jsonify({'prediction': final_preds.tolist()})

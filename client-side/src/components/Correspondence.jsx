@@ -1,5 +1,5 @@
 import Section from './Section';
-import Form from './Form';  
+import Form from './Form';
 
 export default function Correspondence(){
 

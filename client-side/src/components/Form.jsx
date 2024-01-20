@@ -1,5 +1,6 @@
 import ImageInput from './ImageInput';
 import Button from "./Button";
+import Predictions from './Predictions';
 
 import { useContext, useState } from "react";
 import { ThemeContext } from "../contexts/ThemeContext";
@@ -49,7 +50,9 @@ export default function Form(){
                 'method': 'POST',
                 'body': form_data,
             });
-            setResponse(resp);
+
+            const data = await resp.json();
+            setResponse(data);
 
             // if response.status is 200 then that means contact information
             // has been successfully sent to the email.js api
@@ -76,6 +79,7 @@ export default function Form(){
     return (
         <FormInputsContext.Provider value={{
             image, setImage,
+            response,
             handleSubmit,
         }}>
             <div className="form-container">
@@ -86,6 +90,7 @@ export default function Form(){
                 >
                     <ImageInput/>
                     <Button/>
+                    <Predictions/>                   
                 </form>
                 <div className={`alert ${msgStatus !== undefined ? 'show' : ''}`} onClick={(event) => {
                     // remove class from alert container to hide it again
