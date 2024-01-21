@@ -74,3 +74,15 @@ def predict():
     print(final_preds)
     
     return jsonify({'prediction': final_preds.tolist()})
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.errorhandler(404)
+def page_not_found(error):
+    print(error)
+    return 'This page does not exist', 404
+
+
+
